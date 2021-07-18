@@ -1,7 +1,9 @@
 import numpy as np
 import shutil
-#CON_DOT = "●"
-CON_DOT = "･"
+
+from numpy.lib.polynomial import _poly_dispatcher
+CON_DOT = "●"
+#CON_DOT = "･"
 
 class Gate_AA_Generator:
     """qulacsの量子ゲート(QuantumGateBase)を描画するためのクラス
@@ -389,7 +391,7 @@ class Qulacs_QC_Drawer:
 
         ## 描き込まれたゲートを実際に出力する
         ## ただし、回路の長さに応じて表示方法を変える
-        terminal_size = shutil.get_terminal_size().columns - 1 #プロンプトの1行に表示できるサイズ
+        terminal_size = shutil.get_terminal_size().columns - 1 #プロンプトの1行に表示できる文字数-1
         ## プロンプトに収まる場合は普通に表示
         if self.horizontal_size <= terminal_size:
             for line in self.circuit_picture:
@@ -399,11 +401,11 @@ class Qulacs_QC_Drawer:
             ## 折り返して表示するときの、表示を繰り返す回数
             col = self.horizontal_size // terminal_size
             ## 折り返して表示する際の区切り文字。"#"で区切る
-            delimiter = ["#" for i in range(terminal_size)]
+            delimiter = "\n" + "#" * terminal_size
             ## 回路図のどこまでを表示したか思えておく変数
             plot_range = 0
             ## プロンプトの横幅までの表示を繰り返す
-            print("".join(delimiter))
+            print(delimiter)
             for i in range(col):
                 ## 今何回目の表示かを出力
                 print(">>",i)
@@ -413,14 +415,12 @@ class Qulacs_QC_Drawer:
                 ## 表示済みの回路図を記憶
                 plot_range += terminal_size
                 ## 区切りの出力
-                print()
-                print("".join(delimiter))
+                print(delimiter)
             ## 回路の最後の部分の表示
             print(">>", col)
             for line in self.circuit_picture:
                 print("".join(line[plot_range:]))
-            print()
-            print("".join(delimiter))
+            print(delimiter)
     
     def draw_gate(self, gate, index, verbose):
         """引数にgateをとり, 「ゲートの文字化」, 「適切な位置に描き込み」 の順で実際に描き込むメソッド
@@ -553,6 +553,7 @@ class Qulacs_QC_Drawer:
                 if p+1 == self.horizontal_size:
                     break
 
+
 def draw_circuit(circuit, verbose=0):
     """量子回路図を出力するための関数
     Arguments:
@@ -561,4 +562,3 @@ def draw_circuit(circuit, verbose=0):
     """
     Drawer = Qulacs_QC_Drawer(circuit)
     Drawer.draw(verbose=verbose)
-    
