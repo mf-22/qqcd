@@ -1,6 +1,7 @@
 import numpy as np
-CON_DOT = "●"
-#CON_DOT = "･"
+import shutil
+#CON_DOT = "●"
+CON_DOT = "･"
 
 class Gate_AA_Generator:
     """qulacsの量子ゲート(QuantumGateBase)を描画するためのクラス
@@ -377,14 +378,49 @@ class Qulacs_QC_Drawer:
         ## ゲートを１つずつ取り出し回路図に描き込んでいく
         for i in range(gate_num):
             gate = self.circ.get_gate(i)
-            self.draw_gate(gate, index=i, verbose=verbose)
+            ## 確率的に作用するゲートなどでtarget_qubitのインデックスが無いものはスキップする
+            if len(gate.get_target_index_list()) == 0:
+                print("CAUTION: The {}-th Gate you added is skipped. This gate does not have \"target_qubit_list\".".format(i))
+            else:
+                self.draw_gate(gate, index=i, verbose=verbose)
 
         ## ゲートを描き終えたら, ゲート同士や接続が切れているワイヤーを繋ぐ
         self.connect_wire()
 
-        ## 描き込まれたゲートを実際に出力
-        for line in self.circuit_picture:
-            print("".join(line))
+        ## 描き込まれたゲートを実際に出力する
+        ## ただし、回路の長さに応じて表示方法を変える
+        terminal_size = shutil.get_terminal_size().columns - 1 #プロンプトの1行に表示できるサイズ
+        ## プロンプトに収まる場合は普通に表示
+        if self.horizontal_size <= terminal_size:
+            for line in self.circuit_picture:
+                print("".join(line))
+        ## 回路が長いときは途中で折り返して表示する
+        else:
+            ## 折り返して表示するときの、表示を繰り返す回数
+            col = self.horizontal_size // terminal_size
+            ## 折り返して表示する際の区切り文字。"#"で区切る
+            delimiter = ["#" for i in range(terminal_size)]
+            ## 回路図のどこまでを表示したか思えておく変数
+            plot_range = 0
+            ## プロンプトの横幅までの表示を繰り返す
+            print("".join(delimiter))
+            for i in range(col):
+                ## 今何回目の表示かを出力
+                print(">>",i)
+                ## 回路図の出力
+                for line in self.circuit_picture:
+                    print("".join(line[plot_range : plot_range+terminal_size]))
+                ## 表示済みの回路図を記憶
+                plot_range += terminal_size
+                ## 区切りの出力
+                print()
+                print("".join(delimiter))
+            ## 回路の最後の部分の表示
+            print(">>", col)
+            for line in self.circuit_picture:
+                print("".join(line[plot_range:]))
+            print()
+            print("".join(delimiter))
     
     def draw_gate(self, gate, index, verbose):
         """引数にgateをとり, 「ゲートの文字化」, 「適切な位置に描き込み」 の順で実際に描き込むメソッド
